@@ -1,0 +1,25 @@
+{
+  "name": "Jeshwin",
+  "short_name": "Jeshwin",
+  "description": "A puzzle game to restore memories",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a0b1c",
+  "theme_color": "#1a0b1c",
+  "orientation": "portrait",
+  "scope": "./",
+  "icons": [
+    {
+      "src": "assets/images/stage_3.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/images/stage_3.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

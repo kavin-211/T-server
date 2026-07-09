@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Abeneya</title>
+    <link rel="stylesheet" href="style.css?v=6">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a0b1c">
+    <link rel="apple-touch-icon" href="assets/images/stage_1.jpg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Abeneya">
+    <meta name="mobile-web-app-capable" content="yes">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div id="app">
+
+        <!-- Login Modal -->
+        <div id="login-modal" class="glass-panel login-panel">
+            <h2>Welcome to Abeneya</h2>
+            <p>Enter your email to start your puzzle journey</p>
+            <form id="login-form">
+                <input type="email" id="email-input" placeholder="Enter Your Email" class="glass-input" required>
+                <div id="login-error" class="error-msg"></div>
+                <button type="submit" class="primary-btn">Login</button>
+            </form>
+
+            <!-- Virtual Delete Footer -->
+            <div class="login-footer">
+                <p class="delete-perm-text">
+                    Do you want to delete permanently?
+                    <a href="#" id="virtual-delete-link" class="text-link">Delete</a>
+                </p>
+
+                <div id="virtual-delete-form" class="hidden">
+                    <input type="email" id="virtual-delete-mail" placeholder="mailID required to delete the game permanently" class="glass-input" required>
+                    <div id="virtual-delete-error" class="error-msg"></div>
+                    <button id="virtual-delete-confirm-btn" type="button" class="primary-btn">Confirm Delete</button>
+                </div>
+            </div>
+
+            <div class="install-promo">
+                <p><i class="fas fa-download" style="margin-right: 6px;"></i> Install for better experience</p>
+                <button id="login-install-btn" class="install-promo-btn">Install</button>
+            </div>
+        </div>
+
+        <!-- Virtual Delete Block Message -->
+        <div id="delete-block-modal" class="glass-panel login-panel hidden" style="max-width: 560px;">
+            <h2 style="color:#d32f2f;">This game is no longer...</h2>
+            <p id="delete-block-subtext" style="opacity:0.75;">(Virtual delete status active)</p>
+            <div class="delete-block-tap-hint" style="margin-top: 1rem; font-size: 0.8rem; opacity: 0.6;">
+                Tap this message 3 times for admin login.
+            </div>
+        </div>
+
+        <!-- Secret Admin Login (hidden until 3 taps) -->
+        <div id="secret-admin-modal" class="glass-panel login-panel hidden" style="max-width: 420px;">
+            <h2><i class="fas fa-user-shield" style="margin-right: 8px;"></i> Secret Admin Login</h2>
+            <p>Enter admin mailID</p>
+            <form id="secret-admin-form">
+                <input type="email" id="secret-admin-email" placeholder="Admin mailID" class="glass-input" required>
+                <div id="secret-admin-error" class="error-msg"></div>
+                <button type="submit" class="primary-btn">Login</button>
+            </form>
+        </div>
+
+
+        <!-- Admin Dashboard -->
+        <div id="admin-modal" class="glass-panel admin-panel hidden">
+            <div class="admin-header">
+                <h2><i class="fas fa-user-shield" style="margin-right: 10px;"></i> Admin Dashboard</h2>
+                <div>
+                    <button id="admin-back-btn" class="icon-btn" title="Back to Game">
+                        <i class="fas fa-gamepad"></i>
+                    </button>
+                    <button id="close-admin" class="icon-btn">&times;</button>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table id="admin-table">
+                    <thead>
+                        <tr><th>User</th><th>Level</th><th>Last Active</th><th>Installed</th></tr>
+                    </thead>
+                    <tbody id="admin-tbody"></tbody>
+                </table>
+            </div>
+            <div style="margin-top: 1rem; font-size: 0.75rem; opacity: 0.3; text-align: center;">
+                <i class="fas fa-info-circle"></i> Click on "Last Active" to view user history
+            </div>
+        </div>
+
+        <!-- User History Modal -->
+        <div id="history-modal" class="glass-panel admin-panel hidden" style="max-width: 720px;">
+            <div class="admin-header">
+                <h2 id="history-user-title">User History</h2>
+                <button id="close-history" class="icon-btn">&times;</button>
+            </div>
+            <div class="table-wrapper">
+                <table id="history-table">
+                    <thead>
+                        <tr><th>Date</th><th>In-Time</th><th>Out-Time</th><th>Duration</th><th>Action</th></tr>
+                    </thead>
+                    <tbody id="history-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Player Select Modal -->
+        <div id="player-select-modal" class="modal hidden">
+            <div class="glass-panel player-select-panel">
+                <div class="player-select-header">
+                    <h2><i class="fas fa-gamepad"></i> Select Player</h2>
+                    <div>
+                        <button id="logout-btn" class="icon-btn" title="Logout" style="margin-right: 10px;">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                        <img src="assets/images/stage_1.jpg"
+                             class="install-logo pulse" id="installLogo"
+                             style="border-radius:50%;height:36px;width:36px;cursor:pointer;"
+                             title="Double-click to install app"/>
+                    </div>
+                </div>
+                <button id="create-player-btn" class="create-player-btn">
+                    <i class="fas fa-plus-circle"></i> Create Player
+                </button>
+                <div id="player-list" class="player-list">
+                    <div class="no-players-msg" id="no-players-msg">
+                        <i class="fas fa-user-plus"></i>
+                        <p>No players yet.<br>Create one to start!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Player Modal -->
+        <div id="create-player-modal" class="modal hidden" style="z-index: 1200;">
+            <div class="glass-panel create-player-panel">
+                <h2>Enter Player Name</h2>
+                <input type="text" id="player-name-input" placeholder="Your name..." class="glass-input" maxlength="20" autocomplete="off">
+                <div id="create-player-error" class="error-msg"></div>
+                <div class="create-player-actions">
+                    <button id="cancel-create-btn" class="secondary-btn">Cancel</button>
+                    <button id="save-player-btn" class="primary-btn">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Player Modal -->
+        <div id="edit-player-modal" class="modal hidden" style="z-index: 1210;">
+            <div class="glass-panel create-player-panel">
+                <h2>Edit Player Name</h2>
+                <input type="text" id="edit-player-name-input" placeholder="Enter new name..." class="glass-input" maxlength="20" autocomplete="off">
+                <div id="edit-player-error" class="error-msg"></div>
+                <div class="create-player-actions">
+                    <button id="cancel-edit-btn" class="secondary-btn">Cancel</button>
+                    <button id="save-edit-btn" class="primary-btn">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirm Player Modal -->
+        <div id="confirm-player-modal" class="modal hidden" style="z-index: 1500;">
+            <div class="glass-panel confirm-panel">
+                <div class="confirm-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <h2 id="confirm-player-name">Continue as Player?</h2>
+                <p id="confirm-player-info" class="confirm-info"></p>
+                <div class="confirm-actions">
+                    <button id="cancel-confirm-btn" class="secondary-btn">Cancel</button>
+                    <button id="do-confirm-btn" class="primary-btn pulse"><i class="fas fa-play"></i> Play</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Interface -->
+        <div id="game-interface" class="hidden">
+            <header class="glass-header" id="main-header">
+                <button id="back-btn" class="icon-btn" title="Back">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="header-content">
+                    <h1 id="level-title">Level 1</h1>
+                </div>
+                <button id="theme-btn" class="icon-btn" title="Theme">
+                    <i class="fas fa-palette"></i>
+                </button>
+            </header>
+            <div id="game-canvas-container">
+                <canvas id="puzzle-canvas"></canvas>
+            </div>
+            <!-- Level Complete Modal -->
+            <div id="complete-modal" class="modal hidden">
+                <div class="glass-panel">
+                    <h2>Beautiful!</h2>
+                    <p>Memory Restored.</p>
+                    <div id="completed-image-container">
+                        <img id="completed-image" src="" alt="Completed Puzzle">
+                    </div>
+                    <div class="download-buttons">
+                        <button id="download-png-btn" class="download-btn">Download PNG</button>
+                        <button id="download-pdf-btn" class="download-btn">Download PDF</button>
+                    </div>
+                    <button id="next-level-btn" class="primary-btn pulse">Next Level</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Levels Modal -->
+        <div id="levels-modal" class="modal hidden" style="z-index: 3500;">
+            <div class="glass-panel levels-panel">
+                <div class="admin-header">
+                    <h2>Levels</h2>
+                    <div>
+                        <button id="settings-btn" class="icon-btn" title="Settings" style="margin-right: 10px;">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <button id="switch-player-btn" class="icon-btn" title="Switch Player">
+                            <i class="fas fa-users"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="player-badge" id="current-player-badge">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="current-player-name-display"></span>
+                </div>
+                <div id="levels-grid" class="levels-grid"></div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="modal hidden" style="z-index: 3600;">
+            <div class="glass-panel">
+                <div class="admin-header">
+                    <h2>Settings</h2>
+                    <button id="close-settings" class="icon-btn">×</button>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+                    <button id="about-btn" class="primary-btn">About</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- About Modal -->
+        <div id="about-modal" class="modal hidden" style="z-index: 3700;">
+            <div class="glass-panel" style="max-height: 80vh; overflow-y: auto;">
+                <div class="admin-header">
+                    <h2>Game Guidance</h2>
+                    <button id="close-about" class="icon-btn">×</button>
+                </div>
+                <div style="text-align: left; margin-top: 1rem; line-height: 1.6;">
+                    <p><strong>Welcome to Puzzle Master!</strong></p>
+                    <ul style="padding-left: 20px; margin-top: 10px;">
+                        <li>Select a level from the Levels screen.</li>
+                        <li>Drag and drop pieces to assemble the puzzle.</li>
+                        <li>Pieces will snap into place when placed correctly.</li>
+                        <li>Change the game theme using the palette icon in-game.</li>
+                        <li>Complete stages to unlock the next level and downloads.</li>
+                        <li>Have fun!</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme Modal -->
+        <div id="theme-modal" class="modal hidden" style="z-index: 3600;">
+            <div class="glass-panel levels-panel">
+                <div class="admin-header">
+                    <h2>Select Theme</h2>
+                    <button id="close-theme" class="icon-btn">×</button>
+                </div>
+                <div id="theme-grid" class="levels-grid"></div>
+                <button id="apply-theme-btn" class="primary-btn" style="margin-top: 1rem; width: 100%;">OK</button>
+            </div>
+        </div>
+
+        <!-- Celebration Final Screen -->
+        <div id="celebration-modal" class="modal hidden">
+            <div class="stars" aria-hidden="true"></div>
+            <canvas id="fireCanvas"></canvas>
+            <div class="center-card">
+                <div class="game-complete-title">✨ You've completed<br>the entire Game ✨</div>
+            </div>
+            <div class="magic-cursor" id="magicCursor">
+                <div class="cursor-ring"></div>
+                <div class="cursor-core"></div>
+            </div>
+            <div class="hint-text">🚀 automatic infinite crackers • click balloons to pop • [M] mute</div>
+            <div class="celebration-controls">
+                <button id="restart-game-btn" class="primary-btn">Play Again</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="script.js?v=6"></script>
+    <script src="celebration.js"></script>
+</body>
+</html>

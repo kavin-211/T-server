@@ -32,13 +32,14 @@ if (!fs.existsSync(usersFile)) {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../client')));
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, '../client/index.html'));
-    });
-}
+// Serve static files (frontend) both in production and locally.
+// Combined-repo structure: T-server/client/*
+const clientDir = path.join(__dirname, 'client');
+app.use(express.static(clientDir));
+app.get('*', (req, res) => {
+    res.sendFile(path.join(clientDir, 'index.html'));
+});
+
 
 // Start server
 app.listen(PORT, () => {

@@ -1,0 +1,1302 @@
+/* ============================================================
+   Puzzle Master — Style Sheet v5
+   Fonts: Orbitron (headings) + Nunito (body)
+   ============================================================ */
+
+:root {
+    --bg-color: #e3f2fd;
+    --bg-gradient: linear-gradient(135deg, #90caf9 0%, #42a5f5 50%, #1e88e5 100%);
+    --primary-color: #1976d2;
+    --primary-glow: rgba(25, 118, 210, 0.6);
+    --text-color: #0d47a1;
+    --glass-bg: rgba(255, 255, 255, 0.25);
+    --glass-border: rgba(255, 255, 255, 0.4);
+    --font-heading: 'Orbitron', sans-serif;
+    --font-body: 'Nunito', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    background-color: var(--bg-color);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    color: var(--text-color);
+    font-family: var(--font-body);
+    transition: background-image 0.5s ease-in-out;
+}
+
+/* Dark overlay for readability */
+body::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    z-index: -1;
+    pointer-events: none;
+}
+
+#app {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ─── Typography ─────────────────────────────────────────────────────────── */
+h1, h2, h3 {
+    font-family: var(--font-heading);
+    letter-spacing: 0.03em;
+}
+
+h1 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: var(--primary-color);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    font-size: 1.3rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+p, span, li, td, th, button, input {
+    font-family: var(--font-body);
+}
+
+/* ─── Modals ─────────────────────────────────────────────────────────────── */
+.modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(135, 206, 235, 0.85);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    transition: opacity 0.3s;
+}
+
+.modal.hidden {
+    opacity: 0;
+    pointer-events: none;
+    display: none;
+}
+
+.glass-panel {
+    background: rgba(255, 255, 255, 0.85);
+    border: 2px solid var(--primary-color);
+    padding: 2rem;
+    border-radius: 25px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(135, 206, 235, 0.3);
+    max-width: 90%;
+    width: 400px;
+}
+
+/* Login: keep form centered across desktop/mobile */
+#login-modal.login-panel {
+    width: min(92vw, 420px);
+    padding: clamp(1rem, 2.5vw, 2rem);
+}
+
+#login-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+
+/* ─── Buttons ────────────────────────────────────────────────────────────── */
+.primary-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 50px;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.primary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px var(--primary-glow);
+    background: #1565c0;
+}
+
+.primary-btn:active {
+    transform: scale(0.96);
+}
+
+.secondary-btn {
+    background: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+    padding: 0.75rem 2rem;
+    border-radius: 50px;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: all 0.2s;
+}
+
+.secondary-btn:hover {
+    background: rgba(25, 118, 210, 0.1);
+    transform: translateY(-2px);
+}
+
+.icon-btn {
+    background: transparent;
+    border: none;
+    color: var(--primary-color);
+    font-size: 1.4rem;
+    cursor: pointer;
+    padding: 0 10px;
+    font-family: var(--font-body);
+    transition: transform 0.2s, color 0.2s;
+}
+
+.icon-btn:hover {
+    transform: scale(1.1);
+    color: #0d47a1;
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 var(--primary-glow); }
+    70%  { box-shadow: 0 0 0 10px rgba(25, 118, 210, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(25, 118, 210, 0); }
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ─── Glass Input ────────────────────────────────────────────────────────── */
+.glass-input {
+    width: 100%;
+    padding: 12px 16px;
+    margin: 1rem 0;
+    background: rgba(255, 255, 255, 0.7);
+    border: 2px solid var(--primary-color);
+    border-radius: 12px;
+    color: var(--text-color);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 600;
+    outline: none;
+    transition: box-shadow 0.2s;
+}
+
+.glass-input::placeholder {
+    color: rgba(13, 71, 161, 0.4);
+    font-weight: 400;
+}
+
+.glass-input:focus {
+    box-shadow: 0 0 12px var(--primary-glow);
+}
+
+.error-msg {
+    color: #d32f2f;
+    font-size: 0.85rem;
+    min-height: 1.2rem;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+/* ─── Header ─────────────────────────────────────────────────────────────── */
+.glass-header {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    padding: 0.8rem;
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(10px);
+    border-bottom: 2px solid var(--primary-color);
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-content {
+    text-align: center;
+    flex-grow: 1;
+}
+
+.subtitle {
+    font-size: 0.7rem;
+    opacity: 0.8;
+    letter-spacing: 1px;
+    color: var(--text-color);
+}
+
+/* ─── Canvas ─────────────────────────────────────────────────────────────── */
+#game-canvas-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* Light white, low opacity canvas background */
+#puzzle-canvas {
+    border-radius: 8px;
+}
+
+/* ─── Admin/Modal Header ─────────────────────────────────────────────────── */
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.5rem;
+}
+
+/* ─── Levels Panel ───────────────────────────────────────────────────────── */
+.levels-panel {
+    width: 95%;
+    max-width: 520px;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: rgba(227, 242, 253, 0.95);
+}
+
+.player-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(25, 118, 210, 0.1);
+    border: 1px solid var(--primary-color);
+    border-radius: 50px;
+    padding: 6px 16px;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    margin-bottom: 12px;
+    align-self: flex-start;
+}
+
+.player-badge i {
+    font-size: 1.1rem;
+}
+
+/* ─── Levels Grid ────────────────────────────────────────────────────────── */
+.levels-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+    gap: 14px;
+    padding: 6px 2px 10px;
+    overflow-y: auto;
+    flex: 1;
+    background: transparent;
+    pointer-events: auto;
+}
+
+/* ─── Level Card ─────────────────────────────────────────────────────────── */
+.level-card {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid var(--primary-color);
+    border-radius: 18px;
+    padding: 14px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+}
+
+.level-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px var(--primary-glow);
+}
+
+.level-card.completed {
+    border-color: #2e7d32;
+    background: rgba(232, 245, 233, 0.95);
+}
+
+.level-card.locked {
+    border-color: #bdbdbd;
+    background: rgba(245, 245, 245, 0.8);
+    cursor: not-allowed;
+    opacity: 0.75;
+}
+
+.level-card.locked:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Level card — title (TOP) */
+.level-card-title {
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    letter-spacing: 0.06em;
+    text-align: center;
+    width: 100%;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(25, 118, 210, 0.2);
+}
+
+.level-card.completed .level-card-title {
+    color: #2e7d32;
+    border-color: rgba(46, 125, 50, 0.2);
+}
+
+.level-card.locked .level-card-title {
+    color: #9e9e9e;
+    border-color: rgba(158, 158, 158, 0.2);
+}
+
+/* Level card — image section (MIDDLE) */
+.level-card-image-section {
+    width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.level-card-img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    display: block;
+    border-radius: 10px;
+    border: 1px solid rgba(46, 125, 50, 0.3);
+}
+
+.level-card-placeholder {
+    width: 100%;
+    height: 140px;
+    background: rgba(200, 200, 200, 0.3);
+    border: 2px dashed #bdbdbd;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #9e9e9e;
+}
+
+/* Level card — play button (BELOW IMAGE) */
+.level-play-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 50px;
+    font-family: var(--font-heading);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.level-play-btn:hover:not(:disabled) {
+    background: #1565c0;
+    transform: scale(1.04);
+}
+
+.level-play-btn.locked-btn {
+    background: #bdbdbd;
+    color: #fff;
+    cursor: not-allowed;
+}
+
+/* Level card — download row (BOTTOM) */
+.level-card-downloads {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+}
+
+.level-dl-btn {
+    flex: 1;
+    padding: 6px 4px;
+    border: none;
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: #43a047;
+    color: white;
+}
+
+.level-dl-btn.pdf {
+    background: #e53935;
+}
+
+.level-dl-btn:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+}
+
+/* ─── Player Select Panel ────────────────────────────────────────────────── */
+.player-select-panel {
+    width: 95%;
+    max-width: 480px;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    background: rgba(227, 242, 253, 0.97);
+    gap: 14px;
+}
+
+.player-select-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 12px;
+}
+
+.player-select-header h2 {
+    font-size: 1.2rem;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+.install-logo {
+    transition: transform 0.2s;
+}
+
+.install-logo:hover {
+    transform: scale(1.1);
+}
+
+/* Create Player Button */
+.create-player-btn {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, #1976d2, #42a5f5);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.35);
+}
+
+.create-player-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(25, 118, 210, 0.5);
+}
+
+.create-player-btn i {
+    font-size: 1.1rem;
+}
+
+/* Player List */
+.player-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    flex: 1;
+    padding: 2px 2px 6px;
+}
+
+/* No players message */
+.no-players-msg {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 2rem 1rem;
+    color: rgba(13, 71, 161, 0.4);
+    font-weight: 600;
+}
+
+.no-players-msg i {
+    font-size: 2.5rem;
+}
+
+/* Player Row */
+.player-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid rgba(25, 118, 210, 0.3);
+    border-radius: 14px;
+    padding: 12px 14px;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    cursor: default;
+}
+
+.player-info-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
+.player-actions-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.player-row:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(25, 118, 210, 0.2);
+    border-color: var(--primary-color);
+}
+
+.player-row-name {
+    flex: 1;
+    font-family: var(--font-body);
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.player-row-name i {
+    font-size: 1.3rem;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.player-row-levels {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: rgba(13, 71, 161, 0.7);
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.player-row-levels span {
+    font-family: var(--font-heading);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.player-row-play-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 50px;
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 3px 8px rgba(25, 118, 210, 0.4);
+}
+
+.player-row-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.player-action-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.player-action-btn.edit {
+    background: rgba(25, 118, 210, 0.1);
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.player-action-btn.delete {
+    background: rgba(211, 47, 47, 0.1);
+    color: #d32f2f;
+    border: 1px solid #d32f2f;
+}
+
+.player-action-btn:hover {
+    transform: scale(1.1);
+}
+
+.player-action-btn.edit:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.player-action-btn.delete:hover {
+    background: #d32f2f;
+    color: white;
+}
+
+.player-row-play-btn:hover {
+    background: #1565c0;
+    transform: scale(1.06);
+    box-shadow: 0 5px 14px rgba(25, 118, 210, 0.55);
+}
+
+/* ─── Create Player Panel ────────────────────────────────────────────────── */
+.create-player-panel {
+    width: 90%;
+    max-width: 360px;
+    background: rgba(227, 242, 253, 0.97);
+}
+
+.create-player-panel h2 {
+    font-size: 1.15rem;
+    letter-spacing: 0.04em;
+}
+
+.create-player-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 0.5rem;
+}
+
+.create-player-actions .secondary-btn,
+.create-player-actions .primary-btn {
+    margin-top: 0;
+    flex: 1;
+}
+
+/* ─── Confirm Player Panel ───────────────────────────────────────────────── */
+.confirm-panel {
+    width: 90%;
+    max-width: 340px;
+    background: rgba(227, 242, 253, 0.97);
+    padding: 2rem 1.5rem;
+}
+
+.confirm-avatar {
+    font-size: 3.5rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    animation: floatAvatar 2s ease-in-out infinite;
+}
+
+@keyframes floatAvatar {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+.confirm-panel h2 {
+    font-size: 1rem;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.5rem;
+}
+
+.confirm-info {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    color: rgba(13, 71, 161, 0.7);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.confirm-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.confirm-actions .secondary-btn,
+.confirm-actions .primary-btn {
+    margin-top: 0;
+    flex: 1;
+}
+
+/* ─── Game Interface ─────────────────────────────────────────────────────── */
+#game-interface {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* ─── Level Complete Panel ───────────────────────────────────────────────── */
+#completed-image-container {
+    margin: 1rem 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+#completed-image {
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+.download-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 0.75rem 0;
+    flex-wrap: wrap;
+}
+
+.download-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 20px;
+    font-family: var(--font-body);
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px var(--primary-glow);
+    background: #1565c0;
+}
+
+.download-btn:active {
+    transform: scale(0.95);
+}
+
+/* ─── Settings / About Panels ────────────────────────────────────────────── */
+.admin-panel {
+    width: 95%;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    background: rgba(227, 242, 253, 0.97);
+}
+
+.table-wrapper {
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+th, td {
+    padding: 0.8rem 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(135, 206, 235, 0.2);
+}
+
+th {
+    color: var(--primary-color);
+    position: sticky;
+    top: 0;
+    background: rgba(227, 242, 253, 0.97);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    z-index: 10;
+}
+
+.text-link {
+    color: var(--primary-color);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+/* ─── Floating Install Button ────────────────────────────────────────────── */
+.install-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    background: var(--primary-color);
+    color: white;
+    border: 3px solid white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.4rem;
+    cursor: pointer;
+    z-index: 500;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s;
+}
+
+.install-btn:active {
+    transform: scale(0.9);
+}
+
+/* ─── Sparks ─────────────────────────────────────────────────────────────── */
+.spark {
+    position: fixed;
+    width: 6px;
+    height: 6px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #fff, 0 0 20px #ffea00;
+    pointer-events: none;
+    z-index: 9999;
+    animation: spark-anim 1s ease-out forwards;
+}
+
+@keyframes spark-anim {
+    0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+}
+
+/* ─── PWA Install Dialog ─────────────────────────────────────────────────── */
+.pwa-dialog {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+
+.pwa-dialog-content {
+    background: linear-gradient(135deg, rgba(20, 20, 20, 0.95), rgba(40, 40, 40, 0.95));
+    border: 2px solid var(--primary-color);
+    border-radius: 18px;
+    padding: 30px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 15px 40px rgba(25, 118, 210, 0.3);
+    animation: dialogAppear 0.5s ease-out;
+}
+
+@keyframes dialogAppear {
+    from { opacity: 0; transform: translateY(-50px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.pwa-dialog h3 {
+    font-family: var(--font-heading);
+    color: var(--primary-color);
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+    letter-spacing: 0.04em;
+}
+
+.pwa-dialog p {
+    margin-bottom: 12px;
+    line-height: 1.6;
+    color: #fff;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+}
+
+.pwa-dialog-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.pwa-dialog-btn {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 50px;
+    font-family: var(--font-heading);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 100px;
+    letter-spacing: 0.04em;
+}
+
+.pwa-dialog .confirm-install-btn {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.pwa-dialog .confirm-install-btn:hover {
+    background-color: #1565c0;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(25, 118, 210, 0.4);
+}
+
+.pwa-dialog .cancel-btn {
+    background-color: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+}
+
+.pwa-dialog .cancel-btn:hover {
+    background-color: rgba(25, 118, 210, 0.1);
+    transform: translateY(-3px);
+}
+
+/* ─── Virtual Delete Footer (Login) ───────────────────────────────────── */
+.login-footer {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.delete-perm-text {
+    font-size: 0.85rem;
+    opacity: 0.75;
+    text-align: center;
+    line-height: 1.3;
+}
+
+#virtual-delete-form {
+    width: 100%;
+}
+
+/* ─── Install Promo (legacy, kept for safety) ────────────────────────────── */
+.install-promo {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+
+.install-promo-btn {
+    background: white;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+    padding: 0.5rem 1.5rem;
+    border-radius: 20px;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.install-promo-btn:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* ─── Celebration Screen ─────────────────────────────────────────────────── */
+#celebration-modal {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #0a0c1a;
+    z-index: 5000;
+    overflow: hidden;
+}
+
+#celebration-modal .stars,
+#celebration-modal .stars::before,
+#celebration-modal .stars::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+        radial-gradient(1.5px at 15% 30%, #ffe6a0 90%, transparent),
+        radial-gradient(1px at 72% 45%, #ffb3d9 90%, transparent),
+        radial-gradient(2px at 8% 80%, #ffffff 90%, transparent),
+        radial-gradient(1px at 91% 17%, #ffb3d9 90%, transparent),
+        radial-gradient(2px at 43% 92%, #ffb6c1 90%, transparent),
+        radial-gradient(1.5px at 67% 11%, #ffffff 90%, transparent),
+        radial-gradient(1px at 34% 58%, #ff99cc 90%, transparent);
+    opacity: 0.6;
+    z-index: 0;
+}
+
+#celebration-modal .stars::before {
+    transform: translateY(-8px);
+    filter: blur(0.4px);
+}
+
+#celebration-modal .stars::after {
+    transform: translateY(10px);
+    filter: blur(0.8px);
+}
+
+#celebration-modal #fireCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 5;
+    pointer-events: auto;
+}
+
+#celebration-modal .center-card {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(10, 18, 40, 0.65);
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    border: 1px solid rgba(255, 215, 100, 0.3);
+    border-radius: 48px;
+    padding: 28px 40px;
+    text-align: center;
+    box-shadow: 0 30px 50px -10px #00000080, 0 0 0 1px #ffd96630 inset, 0 0 40px #aaccff40;
+    z-index: 20;
+    pointer-events: none;
+    min-width: 300px;
+}
+
+#celebration-modal .game-complete-title {
+    font-family: var(--font-heading);
+    font-size: clamp(22px, 5vw, 46px);
+    font-weight: 900;
+    line-height: 1.2;
+    margin: 0 0 8px;
+    background: linear-gradient(130deg, #ffd966, #ffb347, #ff866b, #b084ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: none;
+    letter-spacing: 0.02em;
+}
+
+#celebration-modal .sub-message {
+    font-family: var(--font-body);
+    font-size: 1.1rem;
+    margin: 0;
+    color: #d6e4ff;
+    font-weight: 600;
+}
+
+#celebration-modal .small-note {
+    font-family: var(--font-body);
+    margin-top: 14px;
+    font-size: 0.85rem;
+    opacity: 0.85;
+}
+
+#celebration-modal .magic-cursor {
+    position: fixed;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 100;
+    transform: translate(-50%, -50%);
+    left: 0; top: 0;
+    filter: drop-shadow(0 0 12px #df9eff);
+    display: none;
+}
+
+#celebration-modal .cursor-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, #faa, #a6f, #6cf, #ffd966, #faa);
+    mask: radial-gradient(circle at 50% 50%, transparent 7px, black 8px);
+    -webkit-mask: radial-gradient(circle at 50% 50%, transparent 7px, black 8px);
+    animation: spin-cursor 1.6s linear infinite;
+}
+
+#celebration-modal .cursor-core {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: white;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 20px #fffa, 0 0 30px #c896ff;
+    animation: pulse-core 1.2s infinite alternate;
+}
+
+@keyframes spin-cursor {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-core {
+    from { width: 8px; height: 8px; opacity: 0.9; }
+    to   { width: 14px; height: 14px; opacity: 1; }
+}
+
+#celebration-modal .hint-text {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    background: #121a2faa;
+    padding: 6px 18px;
+    border-radius: 60px;
+    backdrop-filter: blur(4px);
+    border: 0.5px solid #8a9fd1;
+    color: #cbd5ff;
+    z-index: 25;
+    white-space: nowrap;
+}
+
+#celebration-modal .celebration-controls {
+    position: fixed;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+}
+
+#celebration-modal .celebration-controls .primary-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    padding: 12px 30px;
+    font-size: 0.85rem;
+    border-radius: 25px;
+    cursor: pointer;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s ease;
+    margin-top: 0;
+    letter-spacing: 0.04em;
+}
+
+#celebration-modal .celebration-controls .primary-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+/* Fix scrolling and hide scrollbars for modal content */
+.levels-grid, .player-list, #about-modal .glass-panel,
+.levels-grid *, .player-list *, #about-modal .glass-panel * {
+    touch-action: pan-y !important;
+}
+.levels-grid, .player-list, #about-modal .glass-panel {
+    scrollbar-width: none;
+}
+.levels-grid::-webkit-scrollbar, .player-list::-webkit-scrollbar, #about-modal .glass-panel::-webkit-scrollbar {
+    display: none;
+}
+
+/* Mobile responsive fixes */
+@media (max-width: 480px) {
+    .levels-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px;
+        padding-bottom: 20px;
+    }
+    .level-card-img, .level-card-placeholder {
+        height: 110px !important;
+    }
+    .level-card {
+        padding: 10px 8px 8px !important;
+    }
+    
+    .player-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    .player-info-wrap {
+        justify-content: space-between;
+    }
+    .player-actions-wrap {
+        justify-content: space-between;
+    }
+}

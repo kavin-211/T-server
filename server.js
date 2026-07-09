@@ -34,11 +34,13 @@ app.use('/api/users', userRoutes);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../client')));
+    // In this repo, the client folder is `T-client` (not `client`).
+    app.use(express.static(path.join(__dirname, '../T-client')));
     app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, '../client/index.html'));
+        res.sendFile(path.join(__dirname, '../T-client/index.html'));
     });
 }
+
 
 // Start server
 app.listen(PORT, () => {

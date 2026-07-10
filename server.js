@@ -29,8 +29,14 @@ if (!fs.existsSync(usersFile)) {
 }
 
 // Routes
+// Keep current /api/* mounts for backward compatibility
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+
+// Aliases for deployed frontend that calls /auth/* and /users/* (no /api prefix)
+app.use('/auth', authRoutes);
+app.use('/users', userRoutes);
+
 
 // Serve static files (frontend) both in production and locally.
 // Combined-repo structure: T-server/client/*

@@ -17,9 +17,16 @@
         "outTime": 1783089443277,
         "duration": "0h 5m 24s",
         "action": "logout"
+      },
+      {
+        "inTime": 1783694450044,
+        "outTime": null,
+        "duration": null,
+        "action": "login"
       }
     ],
-    "createdAt": "2026-01-15T10:00:00.000Z"
+    "createdAt": "2026-01-15T10:00:00.000Z",
+    "players": {}
   },
   {
     "email": "kavinprasathvgp@gmail.com",
@@ -326,5 +333,28 @@
       }
     ],
     "createdAt": "2026-07-08T14:34:14.366Z"
+  },
+  {
+    "email": "test@example.com",
+    "currentLevel": 1,
+    "maxCompletedLevel": 0,
+    "installed": false,
+    "players": {},
+    "isAdmin": false,
+    "history": [
+      {
+        "inTime": 1783694436172,
+        "outTime": 1783694482692,
+        "duration": "0h 0m 46s",
+        "action": "login"
+      },
+      {
+        "inTime": 1783694482692,
+        "outTime": null,
+        "duration": null,
+        "action": "login"
+      }
+    ],
+    "createdAt": "2026-07-10T14:40:36.162Z"
   }
 ]

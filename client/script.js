@@ -4,7 +4,8 @@
 
 // In combined-repo deployment, frontend + backend are same origin.
 // Use relative API URLs so Vercel routing works.
-const API_URL = '';
+// Use /api prefix so Render/Node routing hits backend correctly.
+const API_URL = '/api';
 
 
 // ─── Audio Manager ──────────────────────────────────────────────────────────────

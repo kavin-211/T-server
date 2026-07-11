@@ -11,13 +11,31 @@ const readUsers = () => {
         const data = fs.readFileSync(USERS_FILE, 'utf8');
         return JSON.parse(data);
     } catch (error) {
+        console.error('❌ readUsers failed, returning []:', { file: USERS_FILE, message: error?.message });
+        console.error(error);
         return [];
     }
 };
 
+
 const writeUsers = (users) => {
-    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
+    try {
+        const cwd = process.cwd();
+        const exists = fs.existsSync(USERS_FILE);
+        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
+        console.log('📝 writeUsers OK:', { cwd, file: USERS_FILE, existsBefore: exists, byteLength: Buffer.byteLength(JSON.stringify(users)) });
+    } catch (error) {
+        console.error('❌ writeUsers failed:', {
+            cwd: process.cwd(),
+            file: USERS_FILE,
+            existsBefore: fs.existsSync(USERS_FILE),
+            message: error?.message
+        });
+        console.error(error);
+        throw error;
+    }
 };
+
 
 const findUser = (email) => {
     const users = readUsers();

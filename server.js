@@ -28,6 +28,17 @@ if (!fs.existsSync(usersFile)) {
     fs.writeFileSync(usersFile, JSON.stringify([]), 'utf8');
 }
 
+// Disk write test (Render deploy-la data persistence சரியா இருக்கிறதா என உறுதி செய்ய)
+try {
+    const testFile = path.join(dataDir, '.write_test');
+    fs.writeFileSync(testFile, JSON.stringify({ at: new Date().toISOString() }), 'utf8');
+    console.log('✅ Disk write test OK:', testFile);
+} catch (e) {
+    console.error('❌ Disk write test FAILED for dataDir:', dataDir);
+    console.error(e);
+}
+
+
 // Routes
 // Keep current /api/* mounts for backward compatibility
 app.use('/api/auth', authRoutes);

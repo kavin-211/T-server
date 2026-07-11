@@ -8,6 +8,19 @@ const USERS_FILE = path.join(__dirname, '../data/users.json');
 // Virtual delete admin toggle auth is enforced by requiring caller email to be the same as special admin bypass.
 const IS_ADMIN_BYPASS_EMAIL = 'kenrich@gmail.com';
 
+function pushAudit(history, entry) {
+    if (!Array.isArray(history)) return;
+    history.push(entry);
+}
+
+function getMetaFromReq(req) {
+    return {
+        deviceId: req.body?.deviceId || null,
+        userAgent: req.headers['user-agent'] || null
+    };
+}
+
+
 
 // Helper functions
 const readUsers = () => {
@@ -115,11 +128,24 @@ router.post('/:email/players', (req, res) => {
         installed: false
     };
 
+    user.history = Array.isArray(user.history) ? user.history : [];
+    pushAudit(user.history, {
+        inTime: Date.now(),
+        outTime: null,
+        duration: null,
+        action: 'player_create',
+        meta: {
+            playerName: name,
+            ...getMetaFromReq(req)
+        }
+    });
+
     writeUsers(users);
     res.json({ success: true, player: { name, ...players[name] } });
 });
 
 // Update player level (current + max)
+// NOTE: This endpoint is used by the client for internal progress tracking.
 router.put('/:email/players/:playerName/level', (req, res) => {
     const { email, playerName } = req.params;
     const { currentLevel, maxCompletedLevel } = req.body;
@@ -136,6 +162,8 @@ router.put('/:email/players/:playerName/level', (req, res) => {
     if (maxCompletedLevel !== undefined && maxCompletedLevel > (player.maxCompletedLevel ?? 0)) {
         player.maxCompletedLevel = maxCompletedLevel;
     }
+
+
 
     writeUsers(users);
     res.json({ success: true, player: { name: playerName, ...player } });
@@ -172,6 +200,21 @@ router.post('/:email/players/:playerName/progress/complete', (req, res) => {
     // This ensures: logout/relogin continues from proper unlocked state.
     player.currentLevel = Math.max(player.currentLevel ?? 1, completed + 1);
 
+    user.history = Array.isArray(user.history) ? user.history : [];
+    pushAudit(user.history, {
+        inTime: Date.now(),
+        outTime: null,
+        duration: null,
+        action: 'level_complete',
+        meta: {
+            playerName: playerName,
+            completedLevel: completed,
+            newCurrentLevel: player.currentLevel,
+            newMaxCompletedLevel: player.maxCompletedLevel,
+            ...getMetaFromReq(req)
+        }
+    });
+
     writeUsers(users);
     res.json({
         success: true,
@@ -197,6 +240,19 @@ router.put('/:email/players/:playerName/install', (req, res) => {
     if (!player) return res.status(404).json({ error: 'Player not found' });
 
     player.installed = true;
+
+    user.history = Array.isArray(user.history) ? user.history : [];
+    pushAudit(user.history, {
+        inTime: Date.now(),
+        outTime: null,
+        duration: null,
+        action: 'player_install',
+        meta: {
+            playerName: playerName,
+            ...getMetaFromReq(req)
+        }
+    });
+
     writeUsers(users);
     res.json({ success: true });
 });
@@ -221,6 +277,19 @@ router.put('/:email/players/:playerName/rename', (req, res) => {
     players[newName] = players[playerName];
     delete players[playerName];
 
+    user.history = Array.isArray(user.history) ? user.history : [];
+    pushAudit(user.history, {
+        inTime: Date.now(),
+        outTime: null,
+        duration: null,
+        action: 'player_rename',
+        meta: {
+            oldPlayerName: playerName,
+            newPlayerName: newName,
+            ...getMetaFromReq(req)
+        }
+    });
+
     writeUsers(users);
     res.json({ success: true });
 });
@@ -237,6 +306,19 @@ router.delete('/:email/players/:playerName', (req, res) => {
     if (!players[playerName]) return res.status(404).json({ error: 'Player not found' });
 
     delete players[playerName];
+
+    user.history = Array.isArray(user.history) ? user.history : [];
+    pushAudit(user.history, {
+        inTime: Date.now(),
+        outTime: null,
+        duration: null,
+        action: 'player_delete',
+        meta: {
+            playerName: playerName,
+            ...getMetaFromReq(req)
+        }
+    });
+
     writeUsers(users);
     res.json({ success: true });
 });
@@ -268,6 +350,7 @@ router.put('/:email/level', (req, res) => {
 // Mark user as installed
 router.put('/:email/install', (req, res) => {
     const { email } = req.params;
+    const meta = getMetaFromReq(req);
     
     const users = readUsers();
     const user = users.find(u => u.email === email);
@@ -277,6 +360,16 @@ router.put('/:email/install', (req, res) => {
     }
     
     user.installed = true;
+
+    user.history = Array.isArray(user.history) ? user.history : [];
+    pushAudit(user.history, {
+        inTime: Date.now(),
+        outTime: null,
+        duration: null,
+        action: 'user_install',
+        meta: meta
+    });
+
     writeUsers(users);
     res.json({ success: true });
 });

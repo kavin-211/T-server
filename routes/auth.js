@@ -26,7 +26,9 @@ const findUser = (email) => {
 
 // Login endpoint
 router.post('/login', (req, res) => {
-    const { email } = req.body;
+    const { email, deviceId } = req.body;
+
+    const ua = req.headers['user-agent'] || '';
 
     if (!email) {
         return res.status(400).json({ error: 'Email is required' });
@@ -43,7 +45,9 @@ router.post('/login', (req, res) => {
     // Ensure every logged-in email has its own `players` object (per-user),
     // and fill other missing legacy fields safely.
     if (user) {
+        // Ensure we still attach a per-device snapshot for this login
         let changed = false;
+
 
         if (!user.players || typeof user.players !== 'object') {
             user.players = {};
@@ -105,7 +109,8 @@ router.post('/login', (req, res) => {
     }
 
     // Record login session
-    recordSessionStart(email);
+    recordSessionStart(email, deviceId);
+
 
     res.json({
         success: true,
@@ -124,8 +129,9 @@ router.post('/login', (req, res) => {
 router.post('/logout', (req, res) => {
     const { email } = req.body;
     
+    const ua = req.headers['user-agent'] || '';
     if (email) {
-        recordSessionEnd(email);
+        recordSessionEnd(email, null, ua);
     }
     
     res.json({ success: true });
@@ -153,7 +159,7 @@ router.post('/virtual-delete/request', (req, res) => {
 
     const targetEmail = triggerMailId.trim();
 
-    if (targetEmail !== VIRTUAL_DELETE_ALLOWED_MAIL) {
+    if (!VIRTUAL_DELETE_ALLOWED_MAILS.has(targetEmail)) {
         return res.status(403).json({ error: 'Invalid mailID' });
     }
 
@@ -208,11 +214,12 @@ router.get('/virtual-delete/status', (req, res) => {
 });
 
 // Helper functions for session management
-function recordSessionStart(email) {
+function recordSessionStart(email, deviceId) {
     const users = readUsers();
     const user = users.find(u => u.email === email);
     if (user) {
         const now = Date.now();
+
         // Close any open session
         if (user.history.length > 0) {
             const last = user.history[user.history.length - 1];
@@ -224,14 +231,18 @@ function recordSessionStart(email) {
         user.history.push({ 
             inTime: now, 
             outTime: null, 
-            duration: null,
-            action: 'login'
+            duration: null, 
+            action: 'login',
+            meta: {
+                deviceId: deviceId || null,
+                userAgent: ua || null
+            }
         });
         writeUsers(users);
     }
 }
 
-function recordSessionEnd(email) {
+function recordSessionEnd(email, deviceId, ua) {
     const users = readUsers();
     const user = users.find(u => u.email === email);
     if (user && user.history.length > 0) {
@@ -240,6 +251,9 @@ function recordSessionEnd(email) {
             last.outTime = Date.now();
             last.duration = calculateDuration(last.inTime, last.outTime);
             last.action = 'logout';
+            // keep meta from login; optionally enrich if missing
+            if (!last.meta) last.meta = {};
+            last.meta.logoutUserAgent = ua || null;
             writeUsers(users);
         }
     }

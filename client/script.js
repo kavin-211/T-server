@@ -66,13 +66,33 @@ const CONFIG = {
     baseGrid: 8
 };
 
+const Device = {
+    KEY: 'pm_device_id',
+    getId() {
+        try {
+            let id = localStorage.getItem(this.KEY);
+            if (!id) {
+                id = 'dev_' + Math.random().toString(16).slice(2) + '_' + Date.now().toString(16);
+                localStorage.setItem(this.KEY, id);
+            }
+            return id;
+        } catch (e) {
+            // fallback (should still be stable for this session)
+            if (!this._fallback) {
+                this._fallback = 'dev_fallback_' + Math.random().toString(16).slice(2) + '_' + Date.now().toString(16);
+            }
+            return this._fallback;
+        }
+    }
+};
+
 // ─── API Client ──────────────────────────────────────────────────────────────────
 const API = {
     async login(email) {
         const response = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
+            body: JSON.stringify({ email, deviceId: Device.getId() })
         });
         if (!response.ok) {
             const error = await response.json();

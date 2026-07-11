@@ -27,8 +27,8 @@ const findUser = (email) => {
 // Login endpoint
 router.post('/login', (req, res) => {
     const { email, deviceId } = req.body;
+    const ua = (req.headers['user-agent'] || '').toString();
 
-    const ua = req.headers['user-agent'] || '';
 
     if (!email) {
         return res.status(400).json({ error: 'Email is required' });
@@ -109,7 +109,8 @@ router.post('/login', (req, res) => {
     }
 
     // Record login session
-    recordSessionStart(email, deviceId);
+    recordSessionStart(email, deviceId, ua);
+
 
 
     res.json({
@@ -214,11 +215,14 @@ router.get('/virtual-delete/status', (req, res) => {
 });
 
 // Helper functions for session management
-function recordSessionStart(email, deviceId) {
+function recordSessionStart(email, deviceId, ua) {
+    ua = ua || '';
+
     const users = readUsers();
     const user = users.find(u => u.email === email);
     if (user) {
         const now = Date.now();
+
 
         // Close any open session
         if (user.history.length > 0) {

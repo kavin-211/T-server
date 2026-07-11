@@ -26,104 +26,102 @@ const findUser = (email) => {
 
 // Login endpoint
 router.post('/login', (req, res) => {
-    const { email, deviceId } = req.body;
-    const ua = (req.headers['user-agent'] || '').toString();
+    try {
+        const { email, deviceId } = req.body;
+        const ua = (req.headers['user-agent'] || '').toString();
 
-
-    if (!email) {
-        return res.status(400).json({ error: 'Email is required' });
-    }
-
-    // Special admin bypass
-    const isAdmin = email === 'kenrich@gmail.com';
-
-    let user = findUser(email);
-
-
-    // Backward compatibility + defensive init:
-
-    // Ensure every logged-in email has its own `players` object (per-user),
-    // and fill other missing legacy fields safely.
-    if (user) {
-        // Ensure we still attach a per-device snapshot for this login
-        let changed = false;
-
-
-        if (!user.players || typeof user.players !== 'object') {
-            user.players = {};
-            changed = true;
-        }
-        if (!Array.isArray(user.history)) {
-            user.history = [];
-            changed = true;
-        }
-        if (typeof user.currentLevel !== 'number') {
-            user.currentLevel = 1;
-            changed = true;
-        }
-        if (typeof user.maxCompletedLevel !== 'number') {
-            user.maxCompletedLevel = 0;
-            changed = true;
-        }
-        if (typeof user.installed !== 'boolean') {
-            user.installed = false;
-            changed = true;
-        }
-        if (typeof user.isAdmin !== 'boolean') {
-            user.isAdmin = isAdmin;
-            changed = true;
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
         }
 
-        if (changed) {
-            const users = readUsers();
-            const idx = users.findIndex(u => u.email === email);
-            if (idx !== -1) {
-                users[idx] = user;
-                writeUsers(users);
+        // Special admin bypass
+        const isAdmin = email === 'kenrich@gmail.com';
+
+        let user = findUser(email);
+
+        // Backward compatibility + defensive init:
+        // Ensure every logged-in email has its own `players` object (per-user),
+        // and fill other missing legacy fields safely.
+        if (user) {
+            let changed = false;
+
+            if (!user.players || typeof user.players !== 'object') {
+                user.players = {};
+                changed = true;
+            }
+            if (!Array.isArray(user.history)) {
+                user.history = [];
+                changed = true;
+            }
+            if (typeof user.currentLevel !== 'number') {
+                user.currentLevel = 1;
+                changed = true;
+            }
+            if (typeof user.maxCompletedLevel !== 'number') {
+                user.maxCompletedLevel = 0;
+                changed = true;
+            }
+            if (typeof user.installed !== 'boolean') {
+                user.installed = false;
+                changed = true;
+            }
+            if (typeof user.isAdmin !== 'boolean') {
+                user.isAdmin = isAdmin;
+                changed = true;
+            }
+
+            if (changed) {
+                const users = readUsers();
+                const idx = users.findIndex(u => u.email === email);
+                if (idx !== -1) {
+                    users[idx] = user;
+                    writeUsers(users);
+                }
             }
         }
-    }
 
-    if (!user) {
+        if (!user) {
+            // Create new user
+            const newUser = {
+                email,
+                // legacy fields (can be ignored by new client, kept for admin/backward compatibility)
+                currentLevel: 1,
+                maxCompletedLevel: 0,
+                installed: false,
 
-        // Create new user
-        const newUser = {
-            email,
-            // legacy fields (can be ignored by new client, kept for admin/backward compatibility)
-            currentLevel: 1,
-            maxCompletedLevel: 0,
-            installed: false,
+                // per-user separate player profiles (no cross-user leakage)
+                players: {},
 
-            // per-user separate player profiles (no cross-user leakage)
-            players: {},
+                isAdmin: isAdmin,
+                history: [],
+                createdAt: new Date().toISOString()
+            };
 
-            isAdmin: isAdmin,
-            history: [],
-            createdAt: new Date().toISOString()
-        };
-        
-        const users = readUsers();
-        users.push(newUser);
-        writeUsers(users);
-        user = newUser;
-    }
-
-    // Record login session
-    recordSessionStart(email, deviceId, ua);
-
-
-
-    res.json({
-        success: true,
-        user: {
-            email: user.email,
-            currentLevel: user.currentLevel,
-            maxCompletedLevel: user.maxCompletedLevel,
-            installed: user.installed,
-            isAdmin: user.isAdmin || false,
-            history: user.history
+            const users = readUsers();
+            users.push(newUser);
+            writeUsers(users);
+            user = newUser;
         }
-    });
+
+        // Record login session (guarded)
+        recordSessionStart(email, deviceId, ua);
+
+        return res.json({
+            success: true,
+            user: {
+                email: user.email,
+                currentLevel: user.currentLevel,
+                maxCompletedLevel: user.maxCompletedLevel,
+                installed: user.installed,
+                isAdmin: user.isAdmin || false,
+                history: user.history
+            }
+        });
+    } catch (err) {
+        console.error('Login failed:', err);
+        const msg = err?.message || 'Internal server error';
+        return res.status(500).json({ success: false, error: msg });
+    }
 });
 
 // Logout endpoint
@@ -216,33 +214,41 @@ router.get('/virtual-delete/status', (req, res) => {
 
 // Helper functions for session management
 function recordSessionStart(email, deviceId, ua) {
-    ua = ua || '';
+    try {
+        ua = ua || '';
 
-    const users = readUsers();
-    const user = users.find(u => u.email === email);
-    if (user) {
-        const now = Date.now();
+        const users = readUsers();
+        const user = users.find(u => u.email === email);
+        if (user) {
+            const now = Date.now();
 
+            if (!Array.isArray(user.history)) user.history = [];
 
-        // Close any open session
-        if (user.history.length > 0) {
-            const last = user.history[user.history.length - 1];
-            if (!last.outTime) {
-                last.outTime = now;
-                last.duration = calculateDuration(last.inTime, last.outTime);
+            // Close any open session
+            if (user.history.length > 0) {
+                const last = user.history[user.history.length - 1];
+                if (!last.outTime) {
+                    last.outTime = now;
+                    last.duration = calculateDuration(last.inTime, last.outTime);
+                }
             }
+
+            user.history.push({
+                inTime: now,
+                outTime: null,
+                duration: null,
+                action: 'login',
+                meta: {
+                    deviceId: deviceId || null,
+                    userAgent: ua || null
+                }
+            });
+
+            writeUsers(users);
         }
-        user.history.push({ 
-            inTime: now, 
-            outTime: null, 
-            duration: null, 
-            action: 'login',
-            meta: {
-                deviceId: deviceId || null,
-                userAgent: ua || null
-            }
-        });
-        writeUsers(users);
+    } catch (e) {
+        // Do not crash login if session audit fails.
+        console.error('recordSessionStart failed:', e);
     }
 }
 

@@ -344,6 +344,8 @@ const UI = {
                 await this.refreshVirtualDeleteState(savedEmail);
                 if (State.virtualDelete.deleteTriggered) {
                     this.showDeleteBlock();
+                } else if (user.isAdmin) {
+                    this.showAdmin();
                 } else {
                     this.showPlayerSelect();
                 }

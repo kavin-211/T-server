@@ -16,27 +16,15 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Ensure data directory exists
-const dataDir = path.join(__dirname, 'data');
-if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir);
-}
+const mongoose = require('mongoose');
 
-// Ensure users.json exists
-const usersFile = path.join(dataDir, 'users.json');
-if (!fs.existsSync(usersFile)) {
-    fs.writeFileSync(usersFile, JSON.stringify([]), 'utf8');
-}
-
-// Disk write test (Render deploy-la data persistence சரியா இருக்கிறதா என உறுதி செய்ய)
-try {
-    const testFile = path.join(dataDir, '.write_test');
-    fs.writeFileSync(testFile, JSON.stringify({ at: new Date().toISOString() }), 'utf8');
-    console.log('✅ Disk write test OK:', testFile);
-} catch (e) {
-    console.error('❌ Disk write test FAILED for dataDir:', dataDir);
-    console.error(e);
-}
+// Connect to MongoDB
+const MONGODB_URI = 'mongodb+srv://kavinprasathvgp_db_user:<db_password>@cluster0.fhero8l.mongodb.net/abeneya';
+mongoose.connect(MONGODB_URI).then(() => {
+    console.log('✅ Connected to MongoDB');
+}).catch(err => {
+    console.error('❌ MongoDB connection error:', err);
+});
 
 
 // Routes

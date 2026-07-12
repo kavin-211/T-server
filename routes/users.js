@@ -1,16 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const path = require('path');
-const fs = require('fs');
+const User = require('../models/User');
 
-const USERS_FILE = path.join(__dirname, '../data/users.json');
-
-// Virtual delete admin toggle auth is enforced by requiring caller email to be the same as special admin bypass.
 const IS_ADMIN_BYPASS_EMAIL = 'kenrich@gmail.com';
 
-function pushAudit(history, entry) {
-    if (!Array.isArray(history)) return;
-    history.push(entry);
+function pushAudit(user, entry) {
+    if (!Array.isArray(user.history)) user.history = [];
+    user.history.push(entry);
 }
 
 function getMetaFromReq(req) {
@@ -20,463 +16,428 @@ function getMetaFromReq(req) {
     };
 }
 
-
-
-// Helper functions
-const readUsers = () => {
-    try {
-        const data = fs.readFileSync(USERS_FILE, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('❌ readUsers failed, returning []:', { file: USERS_FILE, message: error?.message });
-        console.error(error);
-        return [];
-    }
-};
-
-
-const writeUsers = (users) => {
-    try {
-        const cwd = process.cwd();
-        const exists = fs.existsSync(USERS_FILE);
-        const payload = JSON.stringify(users, null, 2);
-        fs.writeFileSync(USERS_FILE, payload, 'utf8');
-        console.log('📝 writeUsers OK:', { cwd, file: USERS_FILE, existsBefore: exists, byteLength: Buffer.byteLength(payload) });
-    } catch (error) {
-        console.error('❌ writeUsers failed:', {
-            cwd: process.cwd(),
-            file: USERS_FILE,
-            existsBefore: fs.existsSync(USERS_FILE),
-            message: error?.message
-        });
-        console.error(error);
-        throw error;
-    }
-};
-
-
 // Get all users (admin only)
-router.get('/', (req, res) => {
-    const users = readUsers();
-    // Remove sensitive info but keep history
-    const sanitized = users.map(u => ({
-        email: u.email,
-        currentLevel: u.currentLevel,
-        maxCompletedLevel: u.maxCompletedLevel,
-        installed: u.installed,
-        isAdmin: u.isAdmin || false,
-        history: u.history || [],
-        createdAt: u.createdAt
-    }));
-    res.json(sanitized);
+router.get('/', async (req, res) => {
+    try {
+        const users = await User.find({});
+        const sanitized = users.map(u => ({
+            email: u.email,
+            currentLevel: u.currentLevel,
+            maxCompletedLevel: u.maxCompletedLevel,
+            installed: u.installed,
+            isAdmin: u.isAdmin || false,
+            history: u.history || [],
+            createdAt: u.createdAt
+        }));
+        res.json(sanitized);
+    } catch (e) {
+        res.status(500).json({ error: 'Server error' });
+    }
 });
 
 // Get user by email
-router.get('/:email', (req, res) => {
-    const { email } = req.params;
-    const users = readUsers();
-    const user = users.find(u => u.email === email);
-    
-    if (!user) {
-        return res.status(404).json({ error: 'User not found' });
+router.get('/:email', async (req, res) => {
+    try {
+        const { email } = req.params;
+        const user = await User.findOne({ email });
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        res.json({
+            email: user.email,
+            currentLevel: user.currentLevel,
+            maxCompletedLevel: user.maxCompletedLevel,
+            installed: user.installed,
+            isAdmin: user.isAdmin || false,
+            history: user.history || []
+        });
+    } catch (e) {
+        res.status(500).json({ error: 'Server error' });
     }
-    
-    res.json({
-        email: user.email,
-        currentLevel: user.currentLevel,
-        maxCompletedLevel: user.maxCompletedLevel,
-        installed: user.installed,
-        isAdmin: user.isAdmin || false,
-        history: user.history || []
-    });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Per-user player profiles (no cross-user leakage)
-// ─────────────────────────────────────────────────────────────────────────────
-
-
-const ensureUserPlayers = (user) => {
-    if (!user.players || typeof user.players !== 'object') {
-        user.players = {};
-    }
-    return user.players;
-};
-
 // List players for a specific user
-router.get('/:email/players', (req, res) => {
-    const { email } = req.params;
-    const users = readUsers();
-    const user = users.find(u => u.email === email);
+router.get('/:email/players', async (req, res) => {
+    try {
+        const { email } = req.params;
+        const user = await User.findOne({ email });
 
-    if (!user) return res.status(404).json({ error: 'User not found' });
+        if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const playersObj = ensureUserPlayers(user);
-    const players = Object.entries(playersObj).map(([name, p]) => ({
-        name,
-        currentLevel: p.currentLevel ?? 1,
-        maxCompletedLevel: p.maxCompletedLevel ?? 0,
-        installed: !!p.installed
-    }));
+        const players = [];
+        if (user.players) {
+            for (let [name, p] of user.players.entries()) {
+                players.push({
+                    name,
+                    currentLevel: p.currentLevel ?? 1,
+                    maxCompletedLevel: p.maxCompletedLevel ?? 0,
+                    installed: !!p.installed
+                });
+            }
+        }
 
-    res.json({ players });
+        res.json({ players });
+    } catch (e) {
+        res.status(500).json({ error: 'Server error' });
+    }
 });
 
 // Create a new player profile for a user
-router.post('/:email/players', (req, res) => {
-    const { email } = req.params;
-    const { name } = req.body;
+router.post('/:email/players', async (req, res) => {
+    try {
+        const { email } = req.params;
+        const { name } = req.body;
 
-    if (!name || typeof name !== 'string') {
-        return res.status(400).json({ error: 'Player name is required' });
-    }
-
-    const users = readUsers();
-    const user = users.find(u => u.email === email);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    const players = ensureUserPlayers(user);
-
-    if (players[name]) {
-        return res.status(409).json({ error: 'Player already exists' });
-    }
-
-    players[name] = {
-        currentLevel: 1,
-        maxCompletedLevel: 0,
-        installed: false
-    };
-
-    user.history = Array.isArray(user.history) ? user.history : [];
-    pushAudit(user.history, {
-        inTime: Date.now(),
-        outTime: null,
-        duration: null,
-        action: 'player_create',
-        meta: {
-            playerName: name,
-            ...getMetaFromReq(req)
+        if (!name || typeof name !== 'string') {
+            return res.status(400).json({ error: 'Player name is required' });
         }
-    });
 
-    writeUsers(users);
-    res.json({ success: true, player: { name, ...players[name] } });
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        if (!user.players) user.players = new Map();
+        
+        if (user.players.has(name)) {
+            return res.status(409).json({ error: 'Player already exists' });
+        }
+
+        user.players.set(name, {
+            currentLevel: 1,
+            maxCompletedLevel: 0,
+            installed: false
+        });
+
+        pushAudit(user, {
+            inTime: Date.now(),
+            outTime: null,
+            duration: null,
+            action: 'player_create',
+            meta: {
+                playerName: name,
+                ...getMetaFromReq(req)
+            }
+        });
+
+        await user.save();
+        res.json({ success: true, player: { name, ...user.players.get(name) } });
+    } catch (e) {
+        res.status(500).json({ error: 'Server error' });
+    }
 });
 
 // Update player level (current + max)
-// NOTE: This endpoint is used by the client for internal progress tracking.
-router.put('/:email/players/:playerName/level', (req, res) => {
-    const { email, playerName } = req.params;
-    const { currentLevel, maxCompletedLevel } = req.body;
+router.put('/:email/players/:playerName/level', async (req, res) => {
+    try {
+        const { email, playerName } = req.params;
+        const { currentLevel, maxCompletedLevel } = req.body;
 
-    const users = readUsers();
-    const user = users.find(u => u.email === email);
-    if (!user) return res.status(404).json({ error: 'User not found' });
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const players = ensureUserPlayers(user);
-    const player = players[playerName];
-    if (!player) return res.status(404).json({ error: 'Player not found' });
+        if (!user.players || !user.players.has(playerName)) return res.status(404).json({ error: 'Player not found' });
 
-    if (currentLevel !== undefined) player.currentLevel = currentLevel;
-    if (maxCompletedLevel !== undefined && maxCompletedLevel > (player.maxCompletedLevel ?? 0)) {
-        player.maxCompletedLevel = maxCompletedLevel;
+        const player = user.players.get(playerName);
+        if (currentLevel !== undefined) player.currentLevel = currentLevel;
+        if (maxCompletedLevel !== undefined && maxCompletedLevel > (player.maxCompletedLevel ?? 0)) {
+            player.maxCompletedLevel = maxCompletedLevel;
+        }
+        
+        user.players.set(playerName, player); // trigger map update
+        await user.save();
+        res.json({ success: true, player: { name: playerName, ...player } });
+    } catch (e) {
+        res.status(500).json({ error: 'Server error' });
     }
-
-
-
-    writeUsers(users);
-    res.json({ success: true, player: { name: playerName, ...player } });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Mark player progress on completion (per-player/per-email independent)
-// POST /api/users/:email/players/:playerName/progress/complete
-// body: { completedLevel } where completedLevel === current level number finished
-// ─────────────────────────────────────────────────────────────────────────────
-router.post('/:email/players/:playerName/progress/complete', (req, res) => {
-    const { email, playerName } = req.params;
-    const { completedLevel } = req.body;
+// Mark player progress on completion
+router.post('/:email/players/:playerName/progress/complete', async (req, res) => {
+    try {
+        const { email, playerName } = req.params;
+        const { completedLevel } = req.body;
 
-    const completed = Number(completedLevel);
-    if (!Number.isFinite(completed) || completed < 1) {
-        return res.status(400).json({ error: 'completedLevel must be a valid number (>= 1)' });
-    }
-
-    const users = readUsers();
-    const user = users.find(u => u.email === email);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    const players = ensureUserPlayers(user);
-    const player = players[playerName];
-    if (!player) return res.status(404).json({ error: 'Player not found' });
-
-    const currentMax = player.maxCompletedLevel ?? 0;
-    if (completed > currentMax) {
-        player.maxCompletedLevel = completed;
-    }
-
-    // Set currentLevel to next level (cap at 250 handled by client/UI)
-    // This ensures: logout/relogin continues from proper unlocked state.
-    player.currentLevel = Math.max(player.currentLevel ?? 1, completed + 1);
-
-    user.history = Array.isArray(user.history) ? user.history : [];
-    pushAudit(user.history, {
-        inTime: Date.now(),
-        outTime: null,
-        duration: null,
-        action: 'level_complete',
-        meta: {
-            playerName: playerName,
-            completedLevel: completed,
-            newCurrentLevel: player.currentLevel,
-            newMaxCompletedLevel: player.maxCompletedLevel,
-            ...getMetaFromReq(req)
+        const completed = Number(completedLevel);
+        if (!Number.isFinite(completed) || completed < 1) {
+            return res.status(400).json({ error: 'completedLevel must be a valid number (>= 1)' });
         }
-    });
 
-    writeUsers(users);
-    res.json({
-        success: true,
-        player: {
-            name: playerName,
-            currentLevel: player.currentLevel,
-            maxCompletedLevel: player.maxCompletedLevel,
-            installed: !!player.installed
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        if (!user.players || !user.players.has(playerName)) return res.status(404).json({ error: 'Player not found' });
+
+        const player = user.players.get(playerName);
+        const currentMax = player.maxCompletedLevel ?? 0;
+        if (completed > currentMax) {
+            player.maxCompletedLevel = completed;
         }
-    });
+
+        player.currentLevel = Math.max(player.currentLevel ?? 1, completed + 1);
+        user.players.set(playerName, player);
+
+        pushAudit(user, {
+            inTime: Date.now(),
+            outTime: null,
+            duration: null,
+            action: 'level_complete',
+            meta: {
+                playerName: playerName,
+                completedLevel: completed,
+                newCurrentLevel: player.currentLevel,
+                newMaxCompletedLevel: player.maxCompletedLevel,
+                ...getMetaFromReq(req)
+            }
+        });
+
+        await user.save();
+        res.json({
+            success: true,
+            player: {
+                name: playerName,
+                currentLevel: player.currentLevel,
+                maxCompletedLevel: player.maxCompletedLevel,
+                installed: !!player.installed
+            }
+        });
+    } catch (e) {
+        res.status(500).json({ error: 'Server error' });
+    }
 });
 
 // Mark player installed
-router.put('/:email/players/:playerName/install', (req, res) => {
-    const { email, playerName } = req.params;
+router.put('/:email/players/:playerName/install', async (req, res) => {
+    try {
+        const { email, playerName } = req.params;
 
-    const users = readUsers();
-    const user = users.find(u => u.email === email);
-    if (!user) return res.status(404).json({ error: 'User not found' });
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const players = ensureUserPlayers(user);
-    const player = players[playerName];
-    if (!player) return res.status(404).json({ error: 'Player not found' });
+        if (!user.players || !user.players.has(playerName)) return res.status(404).json({ error: 'Player not found' });
 
-    player.installed = true;
+        const player = user.players.get(playerName);
+        player.installed = true;
+        user.players.set(playerName, player);
 
-    user.history = Array.isArray(user.history) ? user.history : [];
-    pushAudit(user.history, {
-        inTime: Date.now(),
-        outTime: null,
-        duration: null,
-        action: 'player_install',
-        meta: {
-            playerName: playerName,
-            ...getMetaFromReq(req)
-        }
-    });
+        pushAudit(user, {
+            inTime: Date.now(),
+            outTime: null,
+            duration: null,
+            action: 'player_install',
+            meta: {
+                playerName: playerName,
+                ...getMetaFromReq(req)
+            }
+        });
 
-    writeUsers(users);
-    res.json({ success: true });
+        await user.save();
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Server error' });
+    }
 });
 
-// Rename player profile (optional but needed for existing UI)
-router.put('/:email/players/:playerName/rename', (req, res) => {
-    const { email, playerName } = req.params;
-    const { newName } = req.body;
+// Rename player profile
+router.put('/:email/players/:playerName/rename', async (req, res) => {
+    try {
+        const { email, playerName } = req.params;
+        const { newName } = req.body;
 
-    if (!newName || typeof newName !== 'string') {
-        return res.status(400).json({ error: 'newName is required' });
-    }
-
-    const users = readUsers();
-    const user = users.find(u => u.email === email);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    const players = ensureUserPlayers(user);
-    if (!players[playerName]) return res.status(404).json({ error: 'Player not found' });
-    if (players[newName]) return res.status(409).json({ error: 'Player already exists' });
-
-    players[newName] = players[playerName];
-    delete players[playerName];
-
-    user.history = Array.isArray(user.history) ? user.history : [];
-    pushAudit(user.history, {
-        inTime: Date.now(),
-        outTime: null,
-        duration: null,
-        action: 'player_rename',
-        meta: {
-            oldPlayerName: playerName,
-            newPlayerName: newName,
-            ...getMetaFromReq(req)
+        if (!newName || typeof newName !== 'string') {
+            return res.status(400).json({ error: 'newName is required' });
         }
-    });
 
-    writeUsers(users);
-    res.json({ success: true });
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        if (!user.players || !user.players.has(playerName)) return res.status(404).json({ error: 'Player not found' });
+        if (user.players.has(newName)) return res.status(409).json({ error: 'Player already exists' });
+
+        const player = user.players.get(playerName);
+        user.players.set(newName, player);
+        user.players.delete(playerName);
+
+        pushAudit(user, {
+            inTime: Date.now(),
+            outTime: null,
+            duration: null,
+            action: 'player_rename',
+            meta: {
+                oldPlayerName: playerName,
+                newPlayerName: newName,
+                ...getMetaFromReq(req)
+            }
+        });
+
+        await user.save();
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Server error' });
+    }
 });
 
 // Delete player profile
-router.delete('/:email/players/:playerName', (req, res) => {
-    const { email, playerName } = req.params;
+router.delete('/:email/players/:playerName', async (req, res) => {
+    try {
+        const { email, playerName } = req.params;
 
-    const users = readUsers();
-    const user = users.find(u => u.email === email);
-    if (!user) return res.status(404).json({ error: 'User not found' });
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const players = ensureUserPlayers(user);
-    if (!players[playerName]) return res.status(404).json({ error: 'Player not found' });
+        if (!user.players || !user.players.has(playerName)) return res.status(404).json({ error: 'Player not found' });
 
-    delete players[playerName];
+        user.players.delete(playerName);
 
-    user.history = Array.isArray(user.history) ? user.history : [];
-    pushAudit(user.history, {
-        inTime: Date.now(),
-        outTime: null,
-        duration: null,
-        action: 'player_delete',
-        meta: {
-            playerName: playerName,
-            ...getMetaFromReq(req)
-        }
-    });
+        pushAudit(user, {
+            inTime: Date.now(),
+            outTime: null,
+            duration: null,
+            action: 'player_delete',
+            meta: {
+                playerName: playerName,
+                ...getMetaFromReq(req)
+            }
+        });
 
-    writeUsers(users);
-    res.json({ success: true });
+        await user.save();
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Server error' });
+    }
 });
 
-// Update user level (legacy) - kept for backward compatibility, but player unlock must come from players[*].maxCompletedLevel.
-router.put('/:email/level', (req, res) => {
-    const { email } = req.params;
-    const { currentLevel, maxCompletedLevel } = req.body;
-    
-    const users = readUsers();
-    const user = users.find(u => u.email === email);
-    
-    if (!user) {
-        return res.status(404).json({ error: 'User not found' });
+// Update user level (legacy)
+router.put('/:email/level', async (req, res) => {
+    try {
+        const { email } = req.params;
+        const { currentLevel, maxCompletedLevel } = req.body;
+        
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        if (currentLevel !== undefined) {
+            user.currentLevel = currentLevel;
+        }
+        
+        if (maxCompletedLevel !== undefined && maxCompletedLevel > user.maxCompletedLevel) {
+            user.maxCompletedLevel = maxCompletedLevel;
+        }
+        
+        await user.save();
+        res.json({ success: true, user });
+    } catch (e) {
+        res.status(500).json({ error: 'Server error' });
     }
-    
-    if (currentLevel !== undefined) {
-        user.currentLevel = currentLevel;
-    }
-    
-    if (maxCompletedLevel !== undefined && maxCompletedLevel > user.maxCompletedLevel) {
-        user.maxCompletedLevel = maxCompletedLevel;
-    }
-    
-    writeUsers(users);
-    res.json({ success: true, user });
 });
 
 // Mark user as installed
-router.put('/:email/install', (req, res) => {
-    const { email } = req.params;
-    const meta = getMetaFromReq(req);
-    
-    const users = readUsers();
-    const user = users.find(u => u.email === email);
-    
-    if (!user) {
-        return res.status(404).json({ error: 'User not found' });
+router.put('/:email/install', async (req, res) => {
+    try {
+        const { email } = req.params;
+        const meta = getMetaFromReq(req);
+        
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        user.installed = true;
+
+        pushAudit(user, {
+            inTime: Date.now(),
+            outTime: null,
+            duration: null,
+            action: 'user_install',
+            meta: meta
+        });
+
+        await user.save();
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Server error' });
     }
-    
-    user.installed = true;
-
-    user.history = Array.isArray(user.history) ? user.history : [];
-    pushAudit(user.history, {
-        inTime: Date.now(),
-        outTime: null,
-        duration: null,
-        action: 'user_install',
-        meta: meta
-    });
-
-    writeUsers(users);
-    res.json({ success: true });
 });
 
 // Delete user history entry
-router.delete('/:email/history/:index', (req, res) => {
-    const { email, index } = req.params;
-    const idx = parseInt(index);
+router.delete('/:email/history/:index', async (req, res) => {
+    try {
+        const { email, index } = req.params;
+        const idx = parseInt(index);
 
-    const users = readUsers();
-    const user = users.find(u => u.email === email);
-    
-    if (!user) {
-        return res.status(404).json({ error: 'User not found' });
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        if (idx < 0 || idx >= (user.history || []).length) {
+            return res.status(400).json({ error: 'Invalid history index' });
+        }
+        
+        user.history.splice(idx, 1);
+        await user.save();
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Server error' });
     }
-    
-    if (idx < 0 || idx >= (user.history || []).length) {
-        return res.status(400).json({ error: 'Invalid history index' });
-    }
-    
-    user.history.splice(idx, 1);
-    writeUsers(users);
-    res.json({ success: true });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Admin manual toggle for virtual delete true/false (NO REAL DELETION)
-// PUT /api/users/:email/virtual-delete
-// body: { deleteTriggered: boolean, callerEmail?: string }
-// NOTE: For simplicity, authorize using callerEmail in request body.
-router.put('/:email/virtual-delete', (req, res) => {
-    const { email } = req.params;
-    const { deleteTriggered, callerEmail } = req.body || {};
+// Admin manual toggle for virtual delete
+router.put('/:email/virtual-delete', async (req, res) => {
+    try {
+        const { email } = req.params;
+        const { deleteTriggered, callerEmail } = req.body || {};
 
-    if (!callerEmail || callerEmail !== IS_ADMIN_BYPASS_EMAIL) {
-        return res.status(403).json({ error: 'Forbidden' });
-    }
+        if (!callerEmail || callerEmail !== IS_ADMIN_BYPASS_EMAIL) {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
 
-    if (deleteTriggered === undefined) {
-        return res.status(400).json({ error: 'deleteTriggered is required' });
-    }
+        if (deleteTriggered === undefined) {
+            return res.status(400).json({ error: 'deleteTriggered is required' });
+        }
 
-    const users = readUsers();
-    const user = users.find(u => u.email === email);
-    if (!user) return res.status(404).json({ error: 'User not found' });
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: 'User not found' });
 
-    user.deleteTriggered = !!deleteTriggered;
-    user.deleteInfo = user.deleteInfo || null;
+        user.deleteTriggered = !!deleteTriggered;
+        user.deleteInfo = user.deleteInfo || null;
 
-    if (user.deleteTriggered) {
-        user.deleteInfo = {
-            action: 'virtual_delete_admin_toggle',
-            triggeredByEmail: callerEmail,
-            targetEmail: email,
-            at: new Date().toISOString()
-        };
-        user.loggedOut = true;
-
-        user.history = Array.isArray(user.history) ? user.history : [];
-        user.history.push({
-            inTime: Date.now(),
-            outTime: null,
-            duration: null,
-            action: 'virtual_delete_admin_toggle',
-            meta: {
-                enabled: true,
+        if (user.deleteTriggered) {
+            user.deleteInfo = {
+                action: 'virtual_delete_admin_toggle',
                 triggeredByEmail: callerEmail,
-                atISO: user.deleteInfo.at
-            }
-        });
-    } else {
-        user.loggedOut = false;
-        user.history = Array.isArray(user.history) ? user.history : [];
-        user.history.push({
-            inTime: Date.now(),
-            outTime: null,
-            duration: null,
-            action: 'virtual_delete_admin_toggle',
-            meta: {
-                enabled: false,
-                triggeredByEmail: callerEmail,
-                atISO: new Date().toISOString()
-            }
-        });
-    }
+                targetEmail: email,
+                at: new Date().toISOString()
+            };
+            user.loggedOut = true;
 
-    writeUsers(users);
-    res.json({ success: true, deleteTriggered: !!deleteTriggered });
+            pushAudit(user, {
+                inTime: Date.now(),
+                outTime: null,
+                duration: null,
+                action: 'virtual_delete_admin_toggle',
+                meta: {
+                    enabled: true,
+                    triggeredByEmail: callerEmail,
+                    atISO: user.deleteInfo.at
+                }
+            });
+        } else {
+            user.loggedOut = false;
+            pushAudit(user, {
+                inTime: Date.now(),
+                outTime: null,
+                duration: null,
+                action: 'virtual_delete_admin_toggle',
+                meta: {
+                    enabled: false,
+                    triggeredByEmail: callerEmail,
+                    atISO: new Date().toISOString()
+                }
+            });
+        }
+
+        await user.save();
+        res.json({ success: true, deleteTriggered: !!deleteTriggered });
+    } catch (e) {
+        res.status(500).json({ error: 'Server error' });
+    }
 });
 
 module.exports = router;

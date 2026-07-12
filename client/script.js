@@ -485,7 +485,11 @@ const UI = {
                 localStorage.setItem('pm_session_email', email);
                 error.textContent = '';
                 document.getElementById('email-input').value = '';
-                this.showPlayerSelect();
+                if (result.user.isAdmin) {
+                    this.showAdmin();
+                } else {
+                    this.showPlayerSelect();
+                }
             } catch (err) {
                 error.textContent = err.message || 'Login failed. Please try again.';
             }
